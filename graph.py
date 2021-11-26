@@ -1,13 +1,16 @@
 from __future__ import annotations  # for type hinting within an enclosing class
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Any
 
 
 class Node():
-    def __init__(self, val, connections=None):
+    def __init__(self, val, in_connections=None, out_connections=None):
         self.val = val
-        self.connections = []
-        if connections:
-            self.connections = connections
+        self.out_connections = []
+        self.in_connections = []
+        if in_connections:
+            self.in_connections = in_connections
+        if out_connections:
+            self.out_connections = out_connections
 
     def __str__(self):
         return f"Node: {self.val}"
@@ -16,10 +19,11 @@ class Node():
         return f"Node: {self.val}"
 
     def add_nodes_cnxs(self, nodes: List[Any]) -> None:
-        self.connections.extend(nodes)
+        self.in_connections.extend(nodes)
 
     def add_edge(self, node: Node) -> None:
-        self.connections.append(node)
+        self.out_connections.append(node)
+        node.in_connections.append(self)
 
 # For a directed graph, we don't need two way edges, only way edges in the connectiosn of each node
 
@@ -111,19 +115,16 @@ class Graph():
         dfs(self.nodes, start)
         return explored_dict[destination]
 
-    def topological_sort(self) -> List[Node]:
+    def topological_sort(self) -> Dict[Node, int]:
         """Will sort nodes of a DAG (Directed Acyclic Graph) in a toplogical order depending on their order of 
         dependencies
 
         :List[Node]: list of nodes in their toplogical order
         """
-
         # outer loop over the entire graph:
         explored_dict = {node: False for node in self.nodes}
-
         # depicts the dependency order or sorting position
         curr_label = len(self.nodes)
-
         dependency_order = {}
 
         def dfs_top(s: Node) -> None:
@@ -146,3 +147,51 @@ class Graph():
                 dfs_top(v)
 
         return dependency_order
+
+    def rev_topological_sort(self) -> List[Node]:
+        explored_dict = {node: False for node in self.nodes}
+        curr_label = len(self.nodes)
+        dependency_order = {}
+
+        def dfs_top(s: Node) -> None:
+            nonlocal explored_dict
+            nonlocal curr_label
+            nonlocal dependency_order
+            explored_dict[s] = True
+            for w in s.in_connections:
+                if not explored_dict[w]:
+                    dfs_top(w)
+            dependency_order[s] = curr_label
+            curr_label -= 1
+
+        for v in self.nodes:
+            if not explored_dict[v]:
+                dfs_top(v)
+
+        return dependency_order
+
+    def scc(self) -> Dict[Node, int]:
+        explored_dict = {node: False for node in self.nodes}
+
+        top_order = self.rev_topological_sort()
+        scc = {}
+        # second pass of dfs
+        # find sccs in reverse topological order
+        numSCC = 0
+
+        def dfs_scc(s):
+            nonlocal explored_dict
+            nonlocal numSCC
+            nonlocal scc
+            explored_dict[s] = True
+            scc[s] = numSCC
+            for v in s.in_connections:
+                if not explored_dict[v]:
+                    dfs_scc(v)
+
+        for v in top_order:
+            if not explored_dict[v]:
+                numSCC += 1
+                dfs_scc(v)
+
+        return scc
