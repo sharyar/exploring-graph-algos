@@ -2,7 +2,7 @@ from __future__ import annotations  # for type hinting within an enclosing class
 from typing import Dict, List, Any
 
 
-class Node():
+class Node:
     def __init__(self, val, in_connections=None, out_connections=None):
         self.val = val
         self.out_connections = []
@@ -28,7 +28,7 @@ class Node():
 # For a directed graph, we don't need two way edges, only way edges in the connectiosn of each node
 
 
-class Graph():
+class Graph:
     def __init__(self, nodes: List[Node]):
         self.nodes = nodes
 
